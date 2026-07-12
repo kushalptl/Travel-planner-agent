@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: travel-planner-agent
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "false"
