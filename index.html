@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelAI — AI Travel Planner</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ══ NAVBAR ══════════════════════════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg sticky-top" id="mainNav">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <div class="brand-icon"><i class="bi bi-globe2"></i></div>
+      <span class="brand-name">Travel<span class="brand-ai">AI</span></span>
+      <span class="badge-ibm ms-1">Groq AI</span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <i class="bi bi-list fs-4"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+        <li class="nav-item"><a class="nav-link nav-tab active" href="#" data-tab="chat"><i class="bi bi-chat-dots me-1"></i>Chat</a></li>
+        <li class="nav-item"><a class="nav-link nav-tab" href="#" data-tab="dashboard"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link nav-tab" href="#" data-tab="itinerary"><i class="bi bi-map me-1"></i>Itinerary</a></li>
+        <li class="nav-item"><a class="nav-link nav-tab" href="#" data-tab="budget"><i class="bi bi-calculator me-1"></i>Budget</a></li>
+        <li class="nav-item"><a class="nav-link nav-tab" href="#" data-tab="group"><i class="bi bi-people me-1"></i>Group</a></li>
+        <li class="nav-item ms-lg-2">
+          <button class="btn btn-theme-toggle" id="themeToggle" title="Toggle dark mode">
+            <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ HERO ═════════════════════════════════════════════════════════════════ -->
+<section class="hero-section" id="heroSection">
+  <div class="hero-bg-particles" id="particles"></div>
+  <div class="container text-center py-5">
+    <div class="hero-badge mb-3 animate-fadein">
+      <i class="bi bi-cpu me-2"></i>Powered by Groq AI (Llama 3)
+    </div>
+    <h1 class="hero-title animate-fadein-delay1">Plan Your Dream Trip<br/><span class="gradient-text">with AI Intelligence</span></h1>
+    <p class="hero-subtitle animate-fadein-delay2">Real-time itineraries · Smart budgets · Live weather · Group coordination</p>
+    <div class="hero-search animate-fadein-delay3">
+      <div class="search-bar">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" class="search-input" id="heroSearch" placeholder="Where do you want to go? (e.g. Tokyo, Paris, Bali...)" />
+        <button class="btn btn-search" id="heroSearchBtn">Plan My Trip</button>
+      </div>
+    </div>
+    <div class="hero-stats animate-fadein-delay3 mt-4">
+      <div class="stat-item"><span class="stat-num">195+</span><span class="stat-label">Countries</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num">AI</span><span class="stat-label">Powered</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num">Free</span><span class="stat-label">Weather API</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="stat-num">Live</span><span class="stat-label">Maps</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MAIN CONTENT ══════════════════════════════════════════════════════════ -->
+<main class="main-content container-fluid px-3 px-lg-4">
+
+  <!-- ── TAB: CHAT ─────────────────────────────────────────────────────── -->
+  <section class="tab-section active" id="tab-chat">
+    <div class="row g-4">
+
+      <!-- Chat Panel -->
+      <div class="col-lg-8">
+        <div class="card-panel h-100 d-flex flex-column">
+          <div class="panel-header">
+            <div class="d-flex align-items-center gap-2">
+              <div class="avatar-ai"><i class="bi bi-robot"></i></div>
+              <div>
+                <div class="fw-600">TravelAI Assistant</div>
+                <div class="text-muted small d-flex align-items-center gap-1">
+                  <span class="status-dot" id="statusDot"></span>
+                  <span id="statusText">Connecting…</span>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-icon" id="clearChatBtn" title="Clear chat"><i class="bi bi-trash3"></i></button>
+              <button class="btn btn-icon" id="exportChatBtn" title="Export chat"><i class="bi bi-download"></i></button>
+            </div>
+          </div>
+
+          <div class="chat-messages" id="chatMessages">
+            <!-- Welcome message injected by JS -->
+          </div>
+
+          <!-- Quick prompts -->
+          <div class="quick-prompts px-3 pb-2" id="quickPrompts">
+            <span class="quick-label">Quick prompts:</span>
+            <button class="chip" data-prompt="Plan a 7-day trip to Japan for 2 people with a $3000 budget">🗾 Japan 7 days</button>
+            <button class="chip" data-prompt="Best time to visit Bali and what to do there">🌴 Bali tips</button>
+            <button class="chip" data-prompt="Family trip to Paris with 2 kids, budget $5000 for 5 days">🗼 Paris family</button>
+            <button class="chip" data-prompt="Solo backpacker trip through Southeast Asia for 3 weeks">🎒 SEA backpack</button>
+            <button class="chip" data-prompt="Budget honeymoon destinations under $2000 total">💑 Honeymoon</button>
+          </div>
+
+          <div class="chat-input-area">
+            <div class="trip-context-bar" id="tripContextBar">
+              <span class="tc-label"><i class="bi bi-info-circle me-1"></i>Trip Context:</span>
+              <span class="tc-item" id="tcDest">No destination</span>
+              <span class="tc-item" id="tcDays">– days</span>
+              <span class="tc-item" id="tcBudget">No budget</span>
+              <span class="tc-item" id="tcPeople">1 traveler</span>
+              <button class="btn btn-xs ms-auto" data-bs-toggle="modal" data-bs-target="#tripContextModal">
+                <i class="bi bi-pencil me-1"></i>Edit
+              </button>
+            </div>
+            <div class="input-row">
+              <textarea id="chatInput" class="chat-textarea" placeholder="Ask me anything about your trip…" rows="1"></textarea>
+              <button class="btn btn-send" id="sendBtn">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side Panel: Weather + Map -->
+      <div class="col-lg-4 d-flex flex-column gap-4">
+        <!-- Weather Card -->
+        <div class="card-panel" id="weatherCard">
+          <div class="panel-header">
+            <span><i class="bi bi-cloud-sun me-2"></i>Live Weather</span>
+            <button class="btn btn-xs" id="refreshWeather"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div id="weatherContent" class="p-3">
+            <div class="weather-empty text-center py-4">
+              <i class="bi bi-cloud text-muted" style="font-size:2.5rem"></i>
+              <p class="text-muted mt-2">Set a destination to see live weather</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="card-panel flex-grow-1" id="mapCard">
+          <div class="panel-header">
+            <span><i class="bi bi-pin-map me-2"></i>Map View</span>
+            <a href="#" id="openOsmLink" class="btn btn-xs" target="_blank" style="display:none">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Open Map
+            </a>
+          </div>
+          <div id="mapContainer" style="height:280px;border-radius:0 0 12px 12px;overflow:hidden;">
+            <div class="map-empty d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+              <i class="bi bi-map" style="font-size:2.5rem"></i>
+              <p class="mt-2">Map will appear when destination is set</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TAB: DASHBOARD ────────────────────────────────────────────────── -->
+  <section class="tab-section" id="tab-dashboard">
+    <div class="dash-header mb-4">
+      <h2 class="dash-title">Trip Dashboard</h2>
+      <p class="text-muted">Overview of your travel plans and quick stats</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-sm-6 col-xl-3"><div class="stat-card" id="statDestination">
+        <div class="stat-icon"><i class="bi bi-geo-alt"></i></div>
+        <div class="stat-body"><div class="stat-value" id="dashDest">—</div><div class="stat-title">Destination</div></div>
+      </div></div>
+      <div class="col-sm-6 col-xl-3"><div class="stat-card" id="statDays">
+        <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
+        <div class="stat-body"><div class="stat-value" id="dashDays">—</div><div class="stat-title">Trip Duration</div></div>
+      </div></div>
+      <div class="col-sm-6 col-xl-3"><div class="stat-card" id="statBudget">
+        <div class="stat-icon"><i class="bi bi-wallet2"></i></div>
+        <div class="stat-body"><div class="stat-value" id="dashBudget">—</div><div class="stat-title">Total Budget</div></div>
+      </div></div>
+      <div class="col-sm-6 col-xl-3"><div class="stat-card" id="statTravelers">
+        <div class="stat-icon"><i class="bi bi-people"></i></div>
+        <div class="stat-body"><div class="stat-value" id="dashTravelers">—</div><div class="stat-title">Travelers</div></div>
+      </div></div>
+    </div>
+
+    <!-- 7-day weather forecast -->
+    <div class="card-panel mt-4">
+      <div class="panel-header"><span><i class="bi bi-cloud-sun me-2"></i>7-Day Forecast</span></div>
+      <div id="forecastRow" class="forecast-row p-3">
+        <p class="text-muted text-center py-3">Set a destination in Chat to load forecast.</p>
+      </div>
+    </div>
+
+    <!-- Trip Checklist -->
+    <div class="card-panel mt-4">
+      <div class="panel-header">
+        <span><i class="bi bi-check2-square me-2"></i>Pre-Trip Checklist</span>
+        <button class="btn btn-xs" id="resetChecklist"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+      </div>
+      <div class="checklist-grid p-3" id="checklist">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TAB: ITINERARY ────────────────────────────────────────────────── -->
+  <section class="tab-section" id="tab-itinerary">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card-panel">
+          <div class="panel-header"><span><i class="bi bi-map me-2"></i>Itinerary Builder</span></div>
+          <div class="p-3">
+            <div class="mb-3">
+              <label class="form-label fw-500">Destination *</label>
+              <input type="text" class="form-control" id="itinDest" placeholder="e.g. Tokyo, Japan" />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-500">Duration (days)</label>
+                <input type="number" class="form-control" id="itinDuration" value="7" min="1" max="30" />
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-500">Travelers</label>
+                <input type="number" class="form-control" id="itinTravelers" value="2" min="1" max="50" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Total Budget (USD)</label>
+              <input type="number" class="form-control" id="itinBudget" value="3000" min="100" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Travel Style</label>
+              <select class="form-select" id="itinStyle">
+                <option value="budget">🎒 Budget Backpacker</option>
+                <option value="mixed" selected>⚖️ Mix of Everything</option>
+                <option value="comfort">🛏️ Comfort & Convenience</option>
+                <option value="luxury">👑 Luxury</option>
+                <option value="adventure">🧗 Adventure & Outdoors</option>
+                <option value="cultural">🏛️ Cultural & Heritage</option>
+                <option value="food">🍜 Food & Culinary</option>
+                <option value="wellness">🧘 Wellness & Relaxation</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Group Type</label>
+              <select class="form-select" id="itinGroupType">
+                <option value="solo">🧍 Solo</option>
+                <option value="couple" selected>💑 Couple</option>
+                <option value="friends">👫 Friends Group</option>
+                <option value="family">👨‍👩‍👧 Family with Kids</option>
+                <option value="seniors">👴 Senior Travelers</option>
+                <option value="corporate">💼 Corporate/Business</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Interests</label>
+              <div class="interest-tags" id="interestTags">
+                <label class="tag-check"><input type="checkbox" value="history" checked><span>🏛️ History</span></label>
+                <label class="tag-check"><input type="checkbox" value="food" checked><span>🍜 Food</span></label>
+                <label class="tag-check"><input type="checkbox" value="nature"><span>🌿 Nature</span></label>
+                <label class="tag-check"><input type="checkbox" value="shopping"><span>🛍️ Shopping</span></label>
+                <label class="tag-check"><input type="checkbox" value="nightlife"><span>🎵 Nightlife</span></label>
+                <label class="tag-check"><input type="checkbox" value="art"><span>🎨 Art</span></label>
+                <label class="tag-check"><input type="checkbox" value="adventure"><span>🧗 Adventure</span></label>
+                <label class="tag-check"><input type="checkbox" value="wellness"><span>🧘 Wellness</span></label>
+                <label class="tag-check"><input type="checkbox" value="photography"><span>📸 Photography</span></label>
+                <label class="tag-check"><input type="checkbox" value="sports"><span>⚽ Sports</span></label>
+              </div>
+            </div>
+            <button class="btn btn-primary w-100" id="generateItinBtn">
+              <i class="bi bi-magic me-2"></i>Generate AI Itinerary
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itinerary Output -->
+      <div class="col-lg-8">
+        <div class="card-panel h-100 d-flex flex-column">
+          <div class="panel-header">
+            <span><i class="bi bi-journal-richtext me-2"></i>Generated Itinerary</span>
+            <div class="d-flex gap-2">
+              <button class="btn btn-xs" id="copyItinBtn" style="display:none"><i class="bi bi-copy me-1"></i>Copy</button>
+              <button class="btn btn-xs" id="downloadItinBtn" style="display:none"><i class="bi bi-download me-1"></i>Download</button>
+            </div>
+          </div>
+          <div class="itin-output flex-grow-1 p-4" id="itinOutput">
+            <div class="itin-placeholder text-center py-5">
+              <i class="bi bi-map" style="font-size:3.5rem;color:var(--color-muted)"></i>
+              <h5 class="mt-3" style="color:var(--color-muted)">Your AI Itinerary Awaits</h5>
+              <p style="color:var(--color-muted)">Fill in the form and click <strong>Generate AI Itinerary</strong> to create your personalised day-by-day travel plan.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TAB: BUDGET ───────────────────────────────────────────────────── -->
+  <section class="tab-section" id="tab-budget">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card-panel">
+          <div class="panel-header"><span><i class="bi bi-calculator me-2"></i>Budget Calculator</span></div>
+          <div class="p-3">
+            <div class="mb-3">
+              <label class="form-label fw-500">Destination</label>
+              <input type="text" class="form-control" id="budgetDest" placeholder="e.g. Bali, Indonesia" />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-500">Duration (days)</label>
+                <input type="number" class="form-control" id="budgetDuration" value="7" min="1" />
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-500">Travelers</label>
+                <input type="number" class="form-control" id="budgetTravelers" value="2" min="1" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Budget Level</label>
+              <div class="budget-tier-selector" id="budgetTierSelector">
+                <button class="tier-btn" data-tier="budget"><i class="bi bi-piggy-bank me-1"></i>Budget</button>
+                <button class="tier-btn active" data-tier="mid"><i class="bi bi-star-half me-1"></i>Mid-Range</button>
+                <button class="tier-btn" data-tier="luxury"><i class="bi bi-gem me-1"></i>Luxury</button>
+              </div>
+            </div>
+            <button class="btn btn-primary w-100 mb-3" id="calcBudgetBtn">
+              <i class="bi bi-calculator me-2"></i>Calculate Budget
+            </button>
+            <!-- Live estimate meters -->
+            <div class="estimate-box" id="estimateBox" style="display:none">
+              <div class="estimate-total" id="estimateTotal">$0</div>
+              <div class="estimate-label">Estimated Total (USD)</div>
+              <div class="estimate-bars mt-3" id="estimateBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card-panel h-100 d-flex flex-column">
+          <div class="panel-header">
+            <span><i class="bi bi-bar-chart-line me-2"></i>Budget Analysis</span>
+          </div>
+          <div class="p-4 flex-grow-1" id="budgetOutput">
+            <div class="text-center py-5">
+              <i class="bi bi-calculator" style="font-size:3.5rem;color:var(--color-muted)"></i>
+              <h5 class="mt-3" style="color:var(--color-muted)">AI Budget Analysis</h5>
+              <p style="color:var(--color-muted)">Enter your trip details and click Calculate to get an AI-powered budget breakdown.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TAB: GROUP TRAVEL ─────────────────────────────────────────────── -->
+  <section class="tab-section" id="tab-group">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="card-panel">
+          <div class="panel-header"><span><i class="bi bi-people me-2"></i>Group / Family Planner</span></div>
+          <div class="p-3">
+            <div class="mb-3">
+              <label class="form-label fw-500">Group Name</label>
+              <input type="text" class="form-control" id="groupName" placeholder="e.g. The Smith Family" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-500">Destination</label>
+              <input type="text" class="form-control" id="groupDest" placeholder="e.g. Costa Rica" />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6"><label class="form-label fw-500">Duration</label>
+                <input type="number" class="form-control" id="groupDuration" value="10" min="1" />
+              </div>
+              <div class="col-6"><label class="form-label fw-500">Total Budget $</label>
+                <input type="number" class="form-control" id="groupBudget" value="10000" />
+              </div>
+            </div>
+
+            <!-- Group members -->
+            <label class="form-label fw-500">Group Members</label>
+            <div id="membersList" class="members-list mb-2">
+              <!-- Rendered by JS -->
+            </div>
+            <button class="btn btn-outline w-100 mb-3" id="addMemberBtn">
+              <i class="bi bi-plus-circle me-1"></i>Add Member
+            </button>
+
+            <button class="btn btn-primary w-100" id="planGroupBtn">
+              <i class="bi bi-magic me-2"></i>Generate Group Plan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="card-panel mb-4">
+          <div class="panel-header"><span><i class="bi bi-cash-stack me-2"></i>Cost Splitter</span></div>
+          <div class="p-3" id="costSplitterSection">
+            <p class="text-muted text-center py-3">Add group members and calculate budget first.</p>
+          </div>
+        </div>
+        <div class="card-panel">
+          <div class="panel-header"><span><i class="bi bi-journal-text me-2"></i>Group Travel Plan</span></div>
+          <div class="p-3 group-plan-output" id="groupOutput">
+            <div class="text-center py-4">
+              <i class="bi bi-people" style="font-size:3rem;color:var(--color-muted)"></i>
+              <p class="mt-2" style="color:var(--color-muted)">Your group travel plan will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══ TRIP CONTEXT MODAL ════════════════════════════════════════════════════ -->
+<div class="modal fade" id="tripContextModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title"><i class="bi bi-sliders me-2"></i>Trip Context</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label fw-500">Destination</label>
+          <input type="text" class="form-control" id="ctxDest" placeholder="e.g. Kyoto, Japan" /></div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label fw-500">Duration (days)</label>
+            <input type="number" class="form-control" id="ctxDays" value="7" min="1" /></div>
+          <div class="col-6"><label class="form-label fw-500">Budget (USD)</label>
+            <input type="number" class="form-control" id="ctxBudget" placeholder="e.g. 3000" /></div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label fw-500">Travelers</label>
+            <input type="number" class="form-control" id="ctxPeople" value="2" min="1" /></div>
+          <div class="col-6"><label class="form-label fw-500">Travel Style</label>
+            <select class="form-select" id="ctxStyle">
+              <option value="budget">Budget</option>
+              <option value="mixed" selected>Mixed</option>
+              <option value="luxury">Luxury</option>
+            </select></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveTripContext" data-bs-dismiss="modal">
+          <i class="bi bi-check2 me-1"></i>Apply Context
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════════════════════════════════════ -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="appToast" class="toast align-items-center border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Notification</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════════════ -->
+<footer class="app-footer mt-5">
+  <div class="container-fluid px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="footer-brand"><i class="bi bi-globe2 me-1"></i>TravelAI</span>
+    <span class="footer-copy">Powered by <strong>Groq AI</strong> · Llama 3.3-70B · Open-Meteo · OpenStreetMap</span>
+    <span class="footer-version">v1.0.0</span>
+  </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
